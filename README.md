@@ -12,8 +12,12 @@ Lightweight FastAPI service providing HTTP/WebSocket endpoints for the FKS platf
 ## Quick Start
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+# Poetry (recommended)
+poetry install --no-root
+poetry run uvicorn fks_api.fastapi_main:app --reload --port 8000
+
+# Or plain venv + pip
+python -m venv .venv && source .venv/bin/activate
 pip install --upgrade pip
 pip install .[websocket,security]
 uvicorn fks_api.fastapi_main:app --reload --port 8000
@@ -24,7 +28,7 @@ Visit: <http://localhost:8000/docs>
 ## Smoke Test
 
 ```bash
-pytest -q
+poetry run pytest -q
 ```
 
 ## Environment Vars
@@ -33,8 +37,29 @@ pytest -q
 - APP_ENV (development|production)
 - OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_FAST_MODEL
 
+## Docker
+
+```bash
+# Dev (build + live reload)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+# Production (pre-built images)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Pull-only sanity
+docker compose -f docker-compose.yml -f docker-compose.pull-only.yml pull
+```
+
+Celery example task:
+
+```bash
+docker compose exec worker celery -A app.celery call fks_api.ping
+```
+
 ## Next Steps
 
 - Replace synthetic data endpoints with real data service
 - AuthN/Z middleware integration
 - Metrics & tracing
+- Deeper Celery task modules / scheduling
+

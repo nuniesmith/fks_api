@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fks-api-root"
+version = "0.0.0"
+description = "Root wrapper to allow pip install . (actual project lives in src/pyproject.toml)"
+authors = [{name="FKS"}]
+license = {text = "Proprietary"}
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools]
+packages = []
