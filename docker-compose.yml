@@ -1,4 +1,3 @@
-version: '3.9'
 # Simplified API compose for core services only (db, redis, api, worker, scheduler)
 services:
   postgres:

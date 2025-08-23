@@ -1,9 +1,21 @@
-"""Auto-added sys.path bootstrap for shared Python utilities.
-This allows `import fks_shared_python...` (package name inside shared/python/src) without local installation.
+"""Unified sys.path bootstrap.
+
+Adds both service local `src/` and `shared/python/src` so imports work uniformly:
+  import fks_shared_python...
+  import fks_api (or other service package)
+
+Idempotent: only inserts if directories exist and not already present.
 """
 from __future__ import annotations
 import sys, pathlib
+
 root = pathlib.Path(__file__).resolve().parent
-shared_src = root / "shared" / "python" / "src"
-if shared_src.is_dir() and str(shared_src) not in sys.path:
-    sys.path.insert(0, str(shared_src))
+paths = [
+    root / "shared" / "python" / "src",
+    root / "src",
+]
+for p in paths:
+    if p.is_dir():
+        sp = str(p)
+        if sp not in sys.path:
+            sys.path.insert(0, sp)
