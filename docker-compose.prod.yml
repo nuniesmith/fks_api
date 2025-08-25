@@ -1,7 +1,0 @@
-services:
-  api:
-    image: ${DOCKER_REGISTRY:-fkstrading}/fks-api:${API_VERSION:-latest}
-  worker:
-    image: ${DOCKER_REGISTRY:-fkstrading}/fks-api:${API_VERSION:-latest}
-  scheduler:
-    image: ${DOCKER_REGISTRY:-fkstrading}/fks-api:${API_VERSION:-latest}

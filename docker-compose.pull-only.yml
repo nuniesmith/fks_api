@@ -1,4 +1,0 @@
-services:
-  api:
-    image: ${DOCKER_REGISTRY:-fkstrading}/fks-api:${API_VERSION:-latest}
-    pull_policy: always
