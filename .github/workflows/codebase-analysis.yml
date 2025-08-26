@@ -1,45 +1,35 @@
-name: Codebase Analysis
+name: Codebase Analysis (fks_api)
 
 on:
   push:
     branches: [ main, master ]
     paths:
-      - '**/*.py'
-      - '**/*.rs'
-      - '**/*.js'
-      - '**/*.ts'
-      - '**/*.tsx'
-      - '**/*.sh'
-      - '**/*.cs'
-      - 'fks_master/scripts/analyze_codebase.sh'
+      - 'src/**'
       - '.github/workflows/codebase-analysis.yml'
   schedule:
     - cron: '17 3 * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - name: Run analysis
+      - uses: actions/checkout@v4
+      - name: Count TODO/FIXME
         run: |
-          bash fks_master/scripts/analyze_codebase.sh --json analysis.json --top 25
+          set -e
+          todo=$(grep -R --exclude-dir .git -c "TODO" src || true | awk -F: '{s+=$2} END{print s+0}')
+          fixme=$(grep -R --exclude-dir .git -c "FIXME" src || true | awk -F: '{s+=$2} END{print s+0}')
+          files=$(find src -type f -name '*.py' | wc -l | tr -d ' ')
+          echo "{\n  \"todo\": $todo,\n  \"fixme\": $fixme,\n  \"files_scanned\": $files\n}" > analysis.json
           cat analysis.json
-
-      - name: Upload analysis artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: codebase-analysis
           path: analysis.json
-
-      - name: Summary metrics
+      - name: Summary
         run: |
-          TODO=$(jq '.todo' analysis.json)
-          FIXME=$(jq '.fixme' analysis.json)
-          DENS=$(jq '.todo_fixme_density_per_1k' analysis.json)
-          echo "TODO=$TODO FIXMEs=$FIXME density_per_1k=$DENS"
+          echo "### Codebase Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "* TODO: $(jq '.todo' analysis.json)" >> $GITHUB_STEP_SUMMARY || true
+          echo "* FIXME: $(jq '.fixme' analysis.json)" >> $GITHUB_STEP_SUMMARY || true
+          echo "* Files Scanned: $(jq '.files_scanned' analysis.json)" >> $GITHUB_STEP_SUMMARY || true
