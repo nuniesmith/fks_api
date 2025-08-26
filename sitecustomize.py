@@ -1,7 +1,7 @@
 """Unified sys.path bootstrap.
 
 Adds both service local `src/` and `shared/python/src` so imports work uniformly:
-  import fks_shared_python...
+  import shared_python...
   import fks_api (or other service package)
 
 Idempotent: only inserts if directories exist and not already present.

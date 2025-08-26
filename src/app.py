@@ -16,7 +16,7 @@ try:  # Celery optional for minimal API usage
 except Exception:  # pragma: no cover
 	Celery = None  # type: ignore
 
-from fks_shared_python import get_settings
+from shared_python import get_settings
 
 settings = get_settings()
 
