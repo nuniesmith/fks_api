@@ -101,14 +101,15 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.DOCKER_USERNAME != '' && format('{0}/fks_api', env.DOCKER_USERNAME) || 'local/fks_api' }}
+          images: ${{ env.DOCKER_USERNAME != '' && format('{0}/fks', env.DOCKER_USERNAME) || 'local/fks' }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=tag
-            type=sha
-            type=raw,value=latest
+            type=ref,event=branch,prefix=api-
+            type=ref,event=tag,prefix=api-
+            type=sha,prefix=api-
+            type=raw,value=api-latest
 
       - name: Build image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -116,6 +117,7 @@ jobs:
           push: ${{ env.DOCKER_USERNAME != '' && env.DOCKER_TOKEN != '' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          load: true  # Load image to local Docker daemon for smoke test
           build-args: |
             SERVICE_RUNTIME=python
             SERVICE_TYPE=api
@@ -123,8 +125,9 @@ jobs:
 
       - name: Run container smoke test
         run: |
-          # Get the first tag from the metadata output
+          # Use the locally built image for testing (no pull required)
           IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          echo "Testing image: $IMAGE_TAG"
           docker run -d --rm -p 8080:8000 --name fks_api_test "$IMAGE_TAG"
           echo 'Waiting for health endpoint...'
           for i in {1..20}; do
