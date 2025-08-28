@@ -1,20 +1,19 @@
-name: fks_api CI #
+name: fks_api CI
 
 on:
   push:
-    branches: [ main, master ]
     paths:
       - 'src/**'
       - 'pyproject.toml'
       - 'requirements*.txt'
-      - 'Dockerfile'
+      - 'Dockerfile*'
       - '.github/workflows/fks_api-ci.yml'
   pull_request:
     paths:
       - 'src/**'
       - 'pyproject.toml'
       - 'requirements*.txt'
-      - 'Dockerfile'
+      - 'Dockerfile*'
       - '.github/workflows/fks_api-ci.yml'
   workflow_dispatch: {}
 
