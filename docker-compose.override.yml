@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  fks_api:
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      APP_ENV: ${APP_ENV:-local}
+    volumes:
+      # Writable bind for iterative local development (override read-only src in base)
+      - ./src:/app/src
+    # Example of adding an extra port or debugger; customize per service
+    # ports:
+    #   - "8001:8000"
+
+# This override intentionally minimal; extend as needed for tooling (debuggers, profilers, etc.).

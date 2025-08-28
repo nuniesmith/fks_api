@@ -1,0 +1,26 @@
+services:
+  fks_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        INSTALL_DEV: "true"
+    environment:
+      APP_ENV: development
+      API_SERVICE_NAME: FKS API Dev
+      APP_MODULE: fastapi_main:app
+    volumes:
+      - ./src:/app/src:ro
+    ports:
+      - '8080:8000'
+    # Command handled by Dockerfile CMD (uvicorn) using APP_MODULE
+    healthcheck:
+      test: ["CMD-SHELL","curl -sf http://localhost:8000/health || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+networks:
+  default:
+    name: fks_api_dev_net

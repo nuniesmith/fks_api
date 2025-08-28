@@ -1,0 +1,110 @@
+name: fks_api Service CI
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'fks_api/**'
+      - '!fks_api/**/README.md'
+  pull_request:
+    paths:
+      - 'fks_api/**'
+      - '!fks_api/**/README.md'
+  workflow_dispatch: {}
+
+env:
+  SERVICE_DIR: fks_api
+  SERVICE_NAME: fks_api
+  DOCKER_CONTEXT: fks_api
+  DOCKERFILE: fks_api/Dockerfile.simple
+  DOCKER_REPO: local/fks
+
+jobs:
+  service-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python (if requirements present)
+        if: ${{ hashFiles(format('{0}/requirements*.txt', env.SERVICE_DIR)) != '' || hashFiles(format('{0}/pyproject.toml', env.SERVICE_DIR)) != '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps (Python)
+        if: ${{ hashFiles(format('{0}/requirements*.txt', env.SERVICE_DIR)) != '' }}
+        run: |
+          pip install -r ${SERVICE_DIR}/requirements.txt || true
+          pip install pytest
+
+      - name: Run unit tests (pytest)
+        if: ${{ hashFiles(format('{0}/requirements*.txt', env.SERVICE_DIR)) != '' || hashFiles(format('{0}/pyproject.toml', env.SERVICE_DIR)) != '' }}
+        run: |
+          cd ${SERVICE_DIR}
+          if ls tests 1>/dev/null 2>&1; then pytest -q || exit 1; else echo 'No tests'; fi
+
+      - name: Codebase analysis (TODO/FIXME counts)
+        run: |
+          set -e
+          cd ${SERVICE_DIR}
+          todo=$(grep -R -c TODO src || true | awk -F: '{s+=$2} END{print s+0}')
+          fixme=$(grep -R -c FIXME src || true | awk -F: '{s+=$2} END{print s+0}')
+          files=$(find src -type f -name '*.py' 2>/dev/null | wc -l | tr -d ' ')
+          jq -n --argjson todo $todo --argjson fixme $fixme --argjson files $files '{todo:$todo,fixme:$fixme,files:$files}' > analysis.json || echo '{"todo":0,"fixme":0,"files":0}' > analysis.json
+          cat analysis.json
+          echo "### Codebase Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "* TODO: $(jq '.todo' analysis.json)" >> $GITHUB_STEP_SUMMARY || true
+          echo "* FIXME: $(jq '.fixme' analysis.json)" >> $GITHUB_STEP_SUMMARY || true
+          echo "* Files: $(jq '.files' analysis.json)" >> $GITHUB_STEP_SUMMARY || true
+        shell: bash
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REPO }}
+          tags: |
+            type=raw,value=${{ env.SERVICE_NAME }}-local
+
+  # Login step omitted in local-only validation mode. TODO: restore when secrets context usable.
+
+      - name: Build & (cond) Push Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.DOCKER_CONTEXT }}
+          file: ${{ env.DOCKERFILE }}
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            INSTALL_DEV=true
+
+      - name: Smoke Test Container
+        run: |
+          set -e
+          tag=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)
+          docker run -d --rm -p 8000:8000 --name ${SERVICE_NAME}_smoke ${tag%% *} || (echo 'Run failed'; exit 1)
+          for i in {1..20}; do sleep 2; if curl -sf localhost:8000/health >/dev/null; then echo OK; break; fi; if [ $i -eq 20 ]; then echo FAIL; docker logs ${SERVICE_NAME}_smoke; exit 1; fi; done
+          docker stop ${SERVICE_NAME}_smoke || true
+
+      - name: Validate docker-compose (if present)
+        run: |
+          if [ -f ${SERVICE_DIR}/docker-compose.yml ]; then
+            docker compose -f ${SERVICE_DIR}/docker-compose.yml config >/dev/null || exit 1;
+          else echo 'No compose file'; fi
+
+      - name: Monitoring config validation (promtool) if repo root has config
+        run: |
+          if [ -f fks_master/config/monitoring/prometheus/prometheus.yml ]; then
+            curl -sSL -o prom.tar.gz https://github.com/prometheus/prometheus/releases/download/v2.55.0/prometheus-2.55.0.linux-amd64.tar.gz
+            tar -xzf prom.tar.gz
+            sudo mv prometheus-2.55.0.linux-amd64/promtool /usr/local/bin/promtool
+            promtool check config fks_master/config/monitoring/prometheus/prometheus.yml
+          else echo 'No monitoring config'; fi
+
+      - name: Summary footer
+        run: echo "CI completed for ${SERVICE_NAME}" >> $GITHUB_STEP_SUMMARY

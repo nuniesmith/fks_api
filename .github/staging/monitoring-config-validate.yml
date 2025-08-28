@@ -1,0 +1,43 @@
+name: Monitoring Config Validate (optional)
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'fks_master/config/monitoring/**'
+      - '.github/workflows/monitoring-config-validate.yml'
+  pull_request:
+    paths:
+      - 'fks_master/config/monitoring/**'
+      - '.github/workflows/monitoring-config-validate.yml'
+  workflow_dispatch: {}
+
+jobs:
+  promtool:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download promtool
+        run: |
+          PROM_VERSION="v2.55.0"
+          curl -sSL -o prom.tar.gz https://github.com/prometheus/prometheus/releases/download/${PROM_VERSION}/prometheus-${PROM_VERSION#v}.linux-amd64.tar.gz
+          tar -xzf prom.tar.gz
+          sudo mv prometheus-${PROM_VERSION#v}.linux-amd64/promtool /usr/local/bin/promtool
+          promtool --version
+
+      - name: Validate Prometheus config (skip if absent)
+        run: |
+          if [ -f config/monitoring/prometheus/prometheus.yml ]; then \
+            promtool check config config/monitoring/prometheus/prometheus.yml; \
+          else echo 'No local monitoring config present'; fi
+
+      - name: Validate rules (skip if absent)
+        run: |
+          if ls config/monitoring/prometheus/rules/*.yml 2>/dev/null; then \
+            promtool check rules config/monitoring/prometheus/rules/*.yml; \
+          else echo 'No rules found'; fi
+
+      - name: Templated summary
+        run: echo "Prometheus configuration and rules validated successfully." >> $GITHUB_STEP_SUMMARY

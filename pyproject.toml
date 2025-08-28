@@ -1,0 +1,66 @@
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "fks_api"
+version = "0.1.0"
+description = "FKS Trading API service (extracted)"
+authors = [ { name = "FKS" } ]
+requires-python = ">=3.11"
+# README lives at repository root
+readme = "../README.md"
+license = { text = "Proprietary" }
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "httpx",
+  "requests",
+  "orjson",
+  "pydantic>=2",
+  "celery[redis]>=5.3.0",
+]
+
+[project.optional-dependencies]
+websocket = ["websockets", "python-socketio"]
+# Poetry extras must use normalized names; split bracket extras into separate pinned deps.
+security = ["python-jose", "cryptography", "passlib", "bcrypt", "python-multipart"]
+
+[project.scripts]
+fks_api = "fks_api.fastapi_main:app"
+
+[tool.uvicorn]
+factory = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.poetry]
+name = "fks_api"
+version = "0.1.0"
+description = "FKS Trading API service (extracted)"
+authors = ["FKS <nunie.smith01@gmail.com>"]
+license = "Proprietary"
+readme = "../README.md"
+# pyproject is already inside src/, so the package root is '.'
+packages = [ { include = "fks_api" } ]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+fastapi = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+httpx = "*"
+requests = "*"
+orjson = "*"
+pydantic = ">=2"
+celery = {version = ">=5.3", extras = ["redis"]}
+shared_python = { path = "../../../shared/shared_python", develop = true }
+
+[tool.poetry.extras]
+websocket = ["websockets", "python-socketio"]
+security = ["python-jose", "cryptography", "passlib", "bcrypt", "python-multipart"]
+
+[tool.poetry.scripts]
+fks_api = "fks_api.fastapi_main:app"
+
+
