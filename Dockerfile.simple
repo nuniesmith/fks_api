@@ -45,7 +45,7 @@ EXPOSE 8000
 
 # Smart default entrypoint: try to detect FastAPI/Uvicorn app or fallback to module
 # Provide overridable runtime env defaults (can't reference undefined variables here)
-ENV APP_MODULE="fks_api.fastapi_main:app" \
+ENV APP_MODULE="fastapi_main:app" \
   APP_COMMAND="" \
   SERVICE_PORT=8000
 
