@@ -2,7 +2,7 @@ from fastapi import status
 import pytest
 import httpx
 
-from fks_api.fastapi_main import app
+from fastapi_main import app
 
 
 @pytest.mark.asyncio
