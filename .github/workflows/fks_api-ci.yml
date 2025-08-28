@@ -81,6 +81,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -91,17 +94,17 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: (Optional) Log in to DockerHub
-        if: secrets.DOCKER_USERNAME != '' && secrets.DOCKER_TOKEN != ''
+        if: ${{ env.DOCKER_USERNAME != '' && env.DOCKER_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_TOKEN }}
 
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKER_USERNAME != '' && format('{0}/fks_api', secrets.DOCKER_USERNAME) || 'local/fks_api' }}
+          images: ${{ env.DOCKER_USERNAME != '' && format('{0}/fks_api', env.DOCKER_USERNAME) || 'local/fks_api' }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -113,7 +116,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.simple
-          push: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_TOKEN != '' }}
+          push: ${{ env.DOCKER_USERNAME != '' && env.DOCKER_TOKEN != '' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
@@ -140,14 +143,14 @@ jobs:
           docker stop fks_api_test
 
       - name: Export image artifact (no push scenario)
-        if: secrets.DOCKER_USERNAME == '' || secrets.DOCKER_TOKEN == ''
+        if: ${{ env.DOCKER_USERNAME == '' || env.DOCKER_TOKEN == '' }}
         run: |
           # Get the first tag from the metadata output
           IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
           docker save "$IMAGE_TAG" | gzip > fks_api-image.tar.gz
         
       - name: Upload image artifact
-        if: secrets.DOCKER_USERNAME == '' || secrets.DOCKER_TOKEN == ''
+        if: ${{ env.DOCKER_USERNAME == '' || env.DOCKER_TOKEN == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: fks_api-image
