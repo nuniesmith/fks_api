@@ -26,6 +26,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'  # Ensure shared_python submodule is checked out
+          
+      - name: Verify shared_python dependency
+        run: |
+          if [ ! -d "shared_python" ] && [ -f ".gitmodules" ]; then
+            echo "shared_python not found but .gitmodules exists, attempting to initialize submodules"
+            git submodule update --init --recursive
+          fi
+          ls -la shared_python/ || echo "shared_python directory not available"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,9 +50,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements.dev.txt
+          # Install shared dependencies if they exist
+          if [ -d "shared_python" ]; then
+            pip install -e shared_python
+          fi
+
+      - name: Validate imports
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/shared_python
+        run: python validate_imports.py
 
       - name: Run tests
-        run: pytest -q --maxfail=1 --disable-warnings --color=yes
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src:${{ github.workspace }}/shared_python
+        run: pytest src/tests/ -q --maxfail=1 --disable-warnings --color=yes
 
       - name: Upload test results (if any)
         if: always()
@@ -63,22 +84,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'  # Ensure shared_python submodule is checked out
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: (Optional) Log in to DockerHub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        if: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME != '' && format('{0}/fks_api', secrets.DOCKERHUB_USERNAME) || 'local/fks_api' }}
+          images: ${{ secrets.DOCKER_USERNAME != '' && format('{0}/fks_api', secrets.DOCKER_USERNAME) || 'local/fks_api' }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -90,7 +113,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.simple
-          push: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+          push: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_TOKEN != '' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
@@ -100,7 +123,9 @@ jobs:
 
       - name: Run container smoke test
         run: |
-          docker run -d --rm -p 8080:8080 --name fks_api_test ${{ steps.meta.outputs.tags }}
+          # Get the first tag from the metadata output
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker run -d --rm -p 8080:8000 --name fks_api_test "$IMAGE_TAG"
           echo 'Waiting for health endpoint...'
           for i in {1..20}; do
             sleep 2
@@ -115,12 +140,14 @@ jobs:
           docker stop fks_api_test
 
       - name: Export image artifact (no push scenario)
-        if: ${{ !(secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '') }}
+        if: secrets.DOCKER_USERNAME == '' || secrets.DOCKER_TOKEN == ''
         run: |
-          docker save ${{ steps.meta.outputs.tags }} | gzip > fks_api-image.tar.gz
+          # Get the first tag from the metadata output
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          docker save "$IMAGE_TAG" | gzip > fks_api-image.tar.gz
         
       - name: Upload image artifact
-        if: ${{ !(secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '') }}
+        if: secrets.DOCKER_USERNAME == '' || secrets.DOCKER_TOKEN == ''
         uses: actions/upload-artifact@v4
         with:
           name: fks_api-image

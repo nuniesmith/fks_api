@@ -11,7 +11,7 @@ import os
 import sys
 from contextlib import asynccontextmanager
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 import math
 import random
@@ -139,7 +139,7 @@ async def health_check() -> Dict[str, Any]:
         "service": APP_NAME,
         "version": APP_VERSION,
         "environment": APP_ENV,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "details": {
             "api_port": API_PORT,
             "cors_enabled": True,
@@ -180,7 +180,7 @@ async def system_status() -> Dict[str, Any]:
     """Get trading system status."""
     return {
         "status": "operational",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "services": {
             "api": "healthy",
             "data": "connecting",
@@ -340,12 +340,12 @@ if not DATA_SERVICE_AVAILABLE:
 @app.get("/api/network/status")
 async def network_status() -> Dict[str, Any]:
     # Basic client IP echo and timestamp; in prod, add TS checks if available
-    return {"ok": True, "clientIP": os.getenv("CLIENT_IP", "127.0.0.1"), "ts": datetime.utcnow().isoformat()}
+    return {"ok": True, "clientIP": os.getenv("CLIENT_IP", "127.0.0.1"), "ts": datetime.now(timezone.utc).isoformat()}
 
 @app.get("/api/security/validate-connection")
 async def security_validate_connection() -> Dict[str, Any]:
     # Minimal validation hook used by PerformanceMonitor
-    return {"ok": True, "ts": datetime.utcnow().isoformat()}
+    return {"ok": True, "ts": datetime.now(timezone.utc).isoformat()}
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
@@ -426,7 +426,7 @@ async def chart_data(symbol: str, timeframe: str = "1h", limit: int = 500) -> Di
     except Exception:
         limit = 500
     step = _tf_to_seconds(timeframe)
-    now = int(datetime.utcnow().timestamp())
+    now = int(datetime.now(timezone.utc).timestamp())
     start = now - step * (limit - 1)
 
     # Seed from symbol for consistent series shape across calls
