@@ -14,7 +14,7 @@ ARG BUILD_VERSION=1.0.0
 ARG BUILD_COMMIT
 
 # Service configuration
-ARG SERVICE_RUNTIME=python  # Options: python, rust, hybrid, dotnet, node
+ARG SERVICE_RUNTIME=python
 ARG SERVICE_TYPE=web
 
 # Build configuration (can be overridden at build time)
@@ -1250,7 +1250,6 @@ LABEL maintainer="nuniesmith" \
 # Expose a default port (runtime listens on SERVICE_PORT via ENV
 EXPOSE 8080
 
-# Improved healthcheck with better error handling
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD if [ "${ENABLE_HEALTHCHECK}" = "true" ] && [ -f "/app/scripts/docker/healthcheck.sh" ]; then \
             /bin/bash /app/scripts/docker/healthcheck.sh; \

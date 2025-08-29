@@ -19,6 +19,24 @@ import random
 from fastapi import FastAPI
 from fastapi import Body
 from fastapi.middleware.cors import CORSMiddleware
+
+# Import timezone utilities
+try:
+    from utils.timezone import (
+        get_current_toronto_time,
+        format_toronto_time, 
+        get_market_hours_info
+    )
+    TIMEZONE_UTILS_AVAILABLE = True
+except ImportError:
+    # Fallback if timezone utils not available
+    TIMEZONE_UTILS_AVAILABLE = False
+    def get_current_toronto_time():
+        return datetime.now()
+    def format_toronto_time(dt=None):
+        return str(dt or datetime.now())
+    def get_market_hours_info():
+        return {"error": "Timezone utils not available"}
 from fastapi.responses import JSONResponse
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -38,11 +56,6 @@ APP_NAME = os.getenv("API_SERVICE_NAME", "FKS Trading API")
 APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
 APP_ENV = os.getenv("APP_ENV", "development")
 API_PORT = int(os.getenv("API_SERVICE_PORT", "8000"))
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434").rstrip("/")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gpt-oss:20b")
-OLLAMA_FAST_MODEL = os.getenv("OLLAMA_FAST_MODEL", "llama3.2:3b-instruct")
-OLLAMA_AUTOPULL = os.getenv("OLLAMA_AUTOPULL", "1") in ("1", "true", "yes")
-OLLAMA_AUTOPULL_FAST = os.getenv("OLLAMA_AUTOPULL_FAST", "0") in ("1", "true", "yes")
 
 # Configure CORS origins
 CORS_ORIGINS = [
@@ -65,45 +78,6 @@ async def lifespan(app: FastAPI):
     print(f"🚀 Starting {APP_NAME} v{APP_VERSION} in {APP_ENV} environment")
     print(f"📡 API listening on port {API_PORT}")
     print(f"🔗 CORS enabled for: {', '.join(CORS_ORIGINS)}")
-    # In development, try to ensure Ollama models are available without blocking startup
-    if APP_ENV.lower() == "development" and OLLAMA_AUTOPULL:
-        async def _ensure_ollama_models():
-            try:
-                import httpx  # type: ignore
-
-                # Helper creates its own client per pull to avoid using a closed client
-                async def _pull_model(name: str) -> None:
-                    try:
-                        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as c:
-                            await c.post(f"{OLLAMA_BASE_URL}/api/pull", json={"name": name})
-                            print(f"[ollama] pull request issued for: {name}")
-                    except Exception as e:
-                        print(f"[ollama] pull failed for {name}: {e}")
-
-                # Probe existing models
-                async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as probe:
-                    try:
-                        r = await probe.get(f"{OLLAMA_BASE_URL}/api/tags")
-                        tags = r.json().get("models", []) if r.status_code < 400 else []
-                    except Exception as e:
-                        print(f"[ollama] tags probe failed: {e}")
-                        tags = []
-
-                have = {m.get("name") for m in tags if isinstance(m, dict)}
-                to_pull = []
-                if OLLAMA_MODEL and OLLAMA_MODEL not in have:
-                    to_pull.append(OLLAMA_MODEL)
-                if OLLAMA_AUTOPULL_FAST and OLLAMA_FAST_MODEL and OLLAMA_FAST_MODEL not in have:
-                    to_pull.append(OLLAMA_FAST_MODEL)
-                for name in to_pull:
-                    try:
-                        print(f"🧰 Ollama: starting background pull for model '{name}'...")
-                        asyncio.create_task(_pull_model(name))
-                    except Exception as e:
-                        print(f"[ollama] pull start failed for {name}: {e}")
-            except Exception as e:
-                print(f"[ollama] ensure models error: {e}")
-        asyncio.create_task(_ensure_ollama_models())
     yield
     # Shutdown
     print(f"🛑 Shutting down {APP_NAME}")
@@ -281,13 +255,6 @@ try:
     app.include_router(sessions_router, prefix="/api")
 except Exception as e:
     print(f"[router] trading_sessions not loaded: {e}")
-
-# Ollama AI proxy
-try:
-    from .routers.ollama_proxy import router as ollama_router
-    app.include_router(ollama_router, prefix="/api")
-except Exception as e:
-    print(f"[router] ollama not loaded: {e}")
 
 # If the heavy Data Service is unavailable, provide minimal fallbacks so the UI works
 if not DATA_SERVICE_AVAILABLE:
@@ -525,6 +492,38 @@ async def chart_indicators(
             })
 
     return {"series": series}
+
+
+@app.get("/api/timezone")
+async def timezone_info() -> Dict[str, Any]:
+    """Get current timezone information and market hours for Toronto."""
+    if not TIMEZONE_UTILS_AVAILABLE:
+        return {
+            "error": "Timezone utilities not available",
+            "current_utc": datetime.utcnow().isoformat(),
+            "container_tz": os.environ.get('TZ', 'Not set')
+        }
+    
+    try:
+        toronto_time = get_current_toronto_time()
+        market_info = get_market_hours_info()
+        
+        return {
+            "current_toronto_time": format_toronto_time(toronto_time),
+            "toronto_time_iso": toronto_time.isoformat(),
+            "current_utc": datetime.utcnow().isoformat(),
+            "container_tz": os.environ.get('TZ', 'Not set'),
+            "market_info": market_info,
+            "timezone_utils_available": True
+        }
+    except Exception as e:
+        return {
+            "error": f"Timezone error: {str(e)}",
+            "current_utc": datetime.utcnow().isoformat(),
+            "container_tz": os.environ.get('TZ', 'Not set'),
+            "timezone_utils_available": False
+        }
+
 
 if __name__ == "__main__":
     import uvicorn

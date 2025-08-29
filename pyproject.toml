@@ -54,7 +54,6 @@ requests = "*"
 orjson = "*"
 pydantic = ">=2"
 celery = {version = ">=5.3", extras = ["redis"]}
-shared_python = { path = "../../../shared/shared_python", develop = true }
 
 [tool.poetry.extras]
 websocket = ["websockets", "python-socketio"]

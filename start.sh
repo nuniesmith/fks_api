@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unified startup script using central compose stack.
+# Enhanced startup script for fks_api with shared resources support
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -8,15 +8,21 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC
 log(){ local lvl="$1"; shift; local msg="$*"; case "$lvl" in INFO) echo -e "${GREEN}[INFO]${NC} $msg";; WARN) echo -e "${YELLOW}[WARN]${NC} $msg";; ERROR) echo -e "${RED}[ERROR]${NC} $msg";; DEBUG) echo -e "${BLUE}[DEBUG]${NC} $msg";; esac; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-ENV_FILE="$ROOT_DIR/.env"
-[ -f "$ENV_FILE" ] && set -a && source "$ENV_FILE" && set +a || log WARN "Root .env not found; continuing with current env"
-# Central compose now lives inside fks_master alongside this script
-: "${COMPOSE_DIR:=$SCRIPT_DIR}"
-COMPOSE_BASE="$COMPOSE_DIR/docker-compose.yml"
-COMPOSE_DEV="$COMPOSE_DIR/docker-compose.dev.yml"
-COMPOSE_PROD="$COMPOSE_DIR/docker-compose.prod.yml"
+ENV_FILE="$SCRIPT_DIR/.env"
+[ -f "$ENV_FILE" ] && set -a && source "$ENV_FILE" && set +a || log WARN "Local .env not found; continuing with current env"
 
+# Use shared scripts if available
+SHARED_DOCKER_DIR="$SCRIPT_DIR/shared/shared_docker"
+if [[ -d "$SHARED_DOCKER_DIR" ]]; then
+    log INFO "✅ Shared docker resources found"
+    COMPOSE_BASE="$SCRIPT_DIR/docker-compose.yml"
+    COMPOSE_SHARED="$SHARED_DOCKER_DIR/compose/docker-compose.template.yml"
+else
+    log WARN "⚠️ Shared resources not found, using local compose only"
+    COMPOSE_BASE="$SCRIPT_DIR/docker-compose.yml"
+fi
+
+# Configuration
 USE_DEV=false
 USE_PROD=false
 NO_BUILD=false
@@ -37,12 +43,31 @@ Options:
   --health-retries N Number of health probe retries (default: $HEALTH_RETRIES)
   --health-interval S Seconds between health probes (default: $HEALTH_INTERVAL)
   --logs             Follow logs after successful start
+  --init-submodules  Initialize/update git submodules
   --help             Show this help
 
 Service selection:
   By default all services in base compose are started. To restrict, append -- then names:
-    ./start.sh --dev -- fks_api postgres redis
+    ./start.sh --dev -- fks_api
 EOF
+}
+
+check_submodules(){
+    log INFO "🔍 Checking shared resource submodules..."
+    
+    if [[ ! -d "$SCRIPT_DIR/shared/shared_docker/.git" || ! -d "$SCRIPT_DIR/shared/shared_scripts/.git" ]]; then
+        log WARN "⚠️ Shared submodules not initialized"
+        log INFO "Initializing submodules..."
+        git submodule update --init --recursive
+        if [[ $? -eq 0 ]]; then
+            log INFO "✅ Submodules initialized successfully"
+        else
+            log ERROR "❌ Failed to initialize submodules"
+            return 1
+        fi
+    else
+        log INFO "✅ Shared submodules are available"
+    fi
 }
 
 parse_args(){
@@ -55,6 +80,7 @@ parse_args(){
       --health-retries) HEALTH_RETRIES="${2:-}"; shift 2;;
       --health-interval) HEALTH_INTERVAL="${2:-}"; shift 2;;
       --logs) FOLLOW_LOGS=true; shift;;
+      --init-submodules) git submodule update --init --recursive; exit 0;;
       --help|-h) show_help; exit 0;;
       --) shift; ADDITIONAL_SERVICES=("$@"); break;;
       *) log ERROR "Unknown option: $1"; show_help; exit 1;;
@@ -126,6 +152,7 @@ follow_logs(){
 
 main(){
   parse_args "$@"
+  check_submodules
   check_tools
   build_or_pull
   bring_up
