@@ -8,8 +8,8 @@ version = "0.1.0"
 description = "FKS Trading API service (extracted)"
 authors = [ { name = "FKS" } ]
 requires-python = ">=3.11"
-# README lives at repository root
-readme = "../README.md"
+# README is inside service directory, not parent
+readme = "README.md"
 license = { text = "Proprietary" }
 dependencies = [
   "fastapi",
@@ -27,7 +27,7 @@ websocket = ["websockets", "python-socketio"]
 security = ["python-jose", "cryptography", "passlib", "bcrypt", "python-multipart"]
 
 [project.scripts]
-fks_api = "fks_api.fastapi_main:app"
+fks_api = "fastapi_main:app"
 
 [tool.uvicorn]
 factory = true
@@ -41,12 +41,13 @@ version = "0.1.0"
 description = "FKS Trading API service (extracted)"
 authors = ["FKS <nunie.smith01@gmail.com>"]
 license = "Proprietary"
-readme = "../README.md"
-# pyproject is already inside src/, so the package root is '.'
-packages = [ { include = "fks_api" } ]
+readme = "README.md"
+# Flat layout: modules live directly under src/, so we omit an explicit packages include.
+# When a proper package directory (src/fks_api/) is introduced, add a packages stanza back.
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.12"
+# Align with container base image (currently Python 3.13) allowing forward minor versions
+python = ">=3.11,<3.14"
 fastapi = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 httpx = "*"
@@ -60,6 +61,6 @@ websocket = ["websockets", "python-socketio"]
 security = ["python-jose", "cryptography", "passlib", "bcrypt", "python-multipart"]
 
 [tool.poetry.scripts]
-fks_api = "fks_api.fastapi_main:app"
+fks_api = "fastapi_main:app"
 
 

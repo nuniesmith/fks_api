@@ -9,7 +9,7 @@ Lightweight FastAPI service providing HTTP/WebSocket endpoints for the FKS platf
 - Optional background Ollama model pull (dev)
 - Modular router loading with graceful degradation
 
-## Quick Start
+## Quick Start (Standalone)
 
 ```bash
 # Poetry (recommended)
@@ -37,18 +37,52 @@ poetry run pytest -q
 - APP_ENV (development|production)
 - OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_FAST_MODEL
 
+## Modes
+
+This service can run in two modes:
+
+1. **Standalone (default)** – Uses lightweight stubs (`standalone_shared.py`) and does not require the external shared monorepo packages.
+2. **Shared Mode** – Mounts shared repositories and sets `USE_SHARED=1` to prefer real shared utilities.
+
+Switch via environment variable:
+
+```bash
+# Standalone (default)
+docker compose up
+
+# Shared
+docker compose -f docker-compose.yml -f docker-compose.shared.yml up
+```
+
+Or manually:
+
+```bash
+USE_SHARED=1 uvicorn fastapi_main:app --reload
+```
+
 ## Docker
 
 ```bash
-# Dev (build + live reload)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Dev (standalone editable install)
+docker compose up --build
 
-# Production (pre-built images)
+# Production (non-editable, lean image)
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # Pull-only sanity
 docker compose -f docker-compose.yml -f docker-compose.pull-only.yml pull
+
+# Build w/o editable install (alternative)
+docker compose build --build-arg INSTALL_EDITABLE=0 fks_api
 ```
+
+### Shared Mode Example
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.shared.yml up --build
+```
+
+This mounts `shared/` subdirectories and sets `USE_SHARED=1` so the runtime imports the real shared utilities instead of stubs.
 
 Celery example task:
 

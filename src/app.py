@@ -1,64 +1,60 @@
-"""App + Celery bootstrap providing a minimal health endpoint and Celery app.
+"""Minimal FastAPI + optional Celery bootstrap used by other modules.
 
-The richer FastAPI application (with many routers) lives in ``fastapi_main.py``.
-This module exposes ``celery`` (referenced by docker compose commands) and a
-small FastAPI app for lightweight liveness.
+The full application (with many routers) is exposed through `fastapi_main.py`.
+This module keeps a very small surface for health checks and worker imports.
 """
-
 from __future__ import annotations
 
 import os
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any, TYPE_CHECKING
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-try:  # Celery optional for minimal API usage
-	from celery import Celery  # type: ignore
-except Exception:  # pragma: no cover
-	Celery = None  # type: ignore
-
-from shared_python import get_settings
+from config import get_settings
 
 settings = get_settings()
 
+try:  # Celery optional
+    from celery import Celery  # type: ignore
+except Exception:  # pragma: no cover
+    Celery = None  # type: ignore
+
+
+if TYPE_CHECKING:  # pragma: no cover
+    from celery import Celery as CeleryType  # noqa
+
+
+def _init_celery() -> Optional['CeleryType']:
+    broker = os.getenv("CELERY_BROKER_URL") or os.getenv("REDIS_URL")
+    if Celery is None or not broker:
+        return None
+    backend = os.getenv("CELERY_RESULT_BACKEND", broker)
+    c = Celery("fks_api", broker=broker, backend=backend)
+    c.conf.update(task_track_started=True, result_expires=3600)
+    return c
+
 
 def create_app() -> FastAPI:
-	app = FastAPI(title="FKS API (Core)", version="0.1.0")
+    app = FastAPI(title=settings.app_name, version=settings.app_version)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origin_list(),
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-	@app.get("/health")
-	def health() -> dict[str, str]:
-		return {"status": "ok", "env": settings.APP_ENV}
+    @app.get("/health")
+    @app.get("/api/health")
+    async def health() -> Dict[str, Any]:
+        return {"status": "healthy", "env": settings.environment, "ts": datetime.now(timezone.utc).isoformat()}
 
-	return app
+    return app
 
 
 app = create_app()
-
-
-def _create_celery() -> "Optional[Celery]":
-	if Celery is None:
-		return None
-	broker = os.getenv("REDIS_URL", "redis://redis:6379/0")
-	backend = broker
-	c = Celery("fks_api", broker=broker, backend=backend)
-	c.conf.update(
-		task_acks_late=True,
-		worker_prefetch_multiplier=int(os.getenv("WORKER_PREFETCH_MULTIPLIER", "1")),
-		task_serializer="json",
-		accept_content=["json"],
-		result_serializer="json",
-		timezone=os.getenv("TZ", "UTC"),
-		enable_utc=True,
-	)
-
-	@c.task(name="fks_api.ping")
-	def ping() -> str:  # type: ignore
-		return "pong"
-
-	return c
-
-
-celery = _create_celery()
+celery = _init_celery()
 
 __all__ = ["app", "create_app", "celery"]
-
-

@@ -2,7 +2,11 @@ from fastapi import status
 import pytest
 import httpx
 
-from fastapi_main import app
+try:
+    from fastapi_main import app  # type: ignore
+except ImportError:  # pragma: no cover
+    # Fallback if module name resolution changes to package path
+    from fks_api.fastapi_main import app  # type: ignore
 
 
 @pytest.mark.asyncio
