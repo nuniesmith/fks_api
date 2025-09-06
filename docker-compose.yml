@@ -4,7 +4,7 @@ services:
     container_name: fks_api
     build:
       context: .
-      dockerfile: shared/shared_docker/templates/Dockerfile.python
+      dockerfile: shared/docker/templates/Dockerfile.python
       args:
         PYTHON_VERSION: "3.11"
         BUILD_PACKAGES: "build-essential gcc libpq-dev"

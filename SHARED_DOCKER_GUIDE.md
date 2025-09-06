@@ -172,5 +172,5 @@ docker-compose -f docker-compose.prod.yml up -d
 
 For issues with the shared templates, check:
 1. `shared/shared_docker/README.md`
-2. Template documentation in `shared/shared_docker/templates/`
+2. Template documentation in `shared/docker/templates/`
 3. Example configurations in `shared/shared_docker/compose/`
