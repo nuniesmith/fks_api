@@ -40,10 +40,10 @@ docker-compose -f docker-compose.shared.yml -f docker-compose.override.yml up
 ### Option 3: Direct Docker Build
 ```bash
 # Build using shared Python template directly
-docker build -f ../shared/shared_docker/templates/python.Dockerfile -t fks_api:latest .
+docker build -f ../shared/docker/templates/python.Dockerfile -t fks_api:latest .
 
 # With build args
-docker build -f ../shared/shared_docker/templates/python.Dockerfile \
+docker build -f ../shared/docker/templates/python.Dockerfile \
   --build-arg PYTHON_VERSION=3.11 \
   --build-arg BUILD_PACKAGES="build-essential gcc libpq-dev" \
   -t fks_api:latest .
@@ -132,12 +132,12 @@ services:
   fks_api:
     build:
       context: .
-      dockerfile: ../shared/shared_docker/templates/python.Dockerfile
+      dockerfile: ../shared/docker/templates/python.Dockerfile
   
   fks_worker:
     build:
       context: ../fks_worker
-      dockerfile: ../shared/shared_docker/templates/python.Dockerfile
+      dockerfile: ../shared/docker/templates/python.Dockerfile
       args:
         APP_COMMAND: "python -m celery worker -A tasks"
 ```
