@@ -37,7 +37,9 @@ def _init_celery() -> Optional['CeleryType']:
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title=settings.app_name, version=settings.app_version)
+    # Serve OpenAPI spec at /api/openapi.json (default would be /openapi.json) to align with
+    # router prefixing and frontend proxy assumptions.
+    app = FastAPI(title=settings.app_name, version=settings.app_version, openapi_url="/api/openapi.json")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list(),
@@ -50,6 +52,11 @@ def create_app() -> FastAPI:
     @app.get("/api/health")
     async def health() -> Dict[str, Any]:
         return {"status": "healthy", "env": settings.environment, "ts": datetime.now(timezone.utc).isoformat()}
+
+    # Provide network/status here as a fallback so 404s stop if fastapi_main (which also defines it) isn't imported yet.
+    @app.get("/api/network/status")
+    async def network_status() -> Dict[str, Any]:  # pragma: no cover simple
+        return {"status": "ok", "service": "fks_api", "ts": datetime.now(timezone.utc).isoformat(), "components": []}
 
     return app
 

@@ -15,12 +15,23 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from loguru import logger
 
-from services.api.services.data_service import DataService
-from services.data.active_assets import (
-    ActiveAsset,
-    ActiveAssetStore,
-    BackfillScheduler,
-)
+try:  # backward compatibility original path
+    from services.api.services.data_service import DataService  # type: ignore
+except Exception:  # fallback to local simplified service
+    from services.data_service import DataService
+try:
+    from services.data.active_assets import (
+        ActiveAsset,
+        ActiveAssetStore,
+        BackfillScheduler,
+    )
+except Exception as e:  # fallback if shim missing
+    print('[active_assets router] fallback import fks_data.active_assets due to', e)
+    from fks_data.active_assets import (  # type: ignore
+        ActiveAsset,
+        ActiveAssetStore,
+        BackfillScheduler,
+    )
 from framework.middleware.auth import get_auth_token, authenticate_user
 
 

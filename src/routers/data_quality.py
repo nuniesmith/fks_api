@@ -11,9 +11,17 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from loguru import logger
 
 from framework.middleware.auth import get_auth_token, authenticate_user
-from services.api.services.data_service import DataService
-from services.data.validation import validate_ohlcv, cross_validate, compute_time_splits
-from services.data.splitting import split_managed_csv
+try:
+    from services.api.services.data_service import DataService  # type: ignore
+except Exception:  # pragma: no cover
+    from services.data_service import DataService
+try:
+    from services.data.validation import validate_ohlcv, cross_validate, compute_time_splits  # type: ignore
+    from services.data.splitting import split_managed_csv  # type: ignore
+except Exception:  # fallback to fks_data package layout
+    from fks_data.validation import validate_ohlcv  # type: ignore
+    from fks_data.validation import cross_validate, compute_time_splits  # type: ignore
+    from fks_data.splitting import split_managed_csv  # type: ignore
 
 
 router = APIRouter(prefix="/data-quality", tags=["data-quality"])

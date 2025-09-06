@@ -1,4 +1,3 @@
-version: "3.9"
 
 services:
   fks_api:
@@ -40,4 +39,5 @@ services:
 
 networks:
   fks_net:
-    driver: bridge
+    name: fks_net
+    external: true

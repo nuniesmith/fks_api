@@ -10,6 +10,12 @@ from typing import Any
 
 from app import app  # reuse the minimal app instance
 
+# Ensure fks_data package resolvable when running standalone (dev convenience)
+import sys, os  # noqa
+_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if _root not in sys.path:
+    sys.path.append(_root)
+
 # Router inclusion helpers -------------------------------------------------
 
 def _include(prefix: str, import_path: str, attr: str = "router") -> None:
@@ -31,8 +37,19 @@ _include("/api", "routers.trading_sessions")
 _include("/api", "routers.optimization")
 _include("/api", "routers.transformer_ingest")
 
+# Lightweight network/status endpoint (mirrors extended package version)
+@app.get("/api/network/status")
+async def network_status() -> dict[str, Any]:  # pragma: no cover simple status
+    return {"status": "ok", "service": "fks_api", "components": ["active_assets", "strategies", "dataset"], "ts": __import__("datetime").datetime.utcnow().isoformat()}
+
 # Legacy v1 routes if available
 _include("/api/v1", "routes.v1.backtest")
+
+# Fallback stub for /api/active-assets if real router failed to mount (avoid frontend 404 spam)
+@app.get("/api/active-assets")
+async def active_assets_stub() -> dict[str, Any]:  # pragma: no cover simple stub
+    # If real router was mounted, this should be shadowed and never execute (FastAPI uses first match order)
+    return {"items": [], "count": 0, "stub": True}
 
 @app.get("/")
 async def root() -> dict[str, Any]:

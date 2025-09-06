@@ -14,7 +14,10 @@ from fastapi import APIRouter, Depends
 from loguru import logger
 
 from framework.middleware.auth import get_auth_token, authenticate_user
-from services.api.services.data_service import DataService
+try:
+    from services.api.services.data_service import DataService  # type: ignore
+except Exception:
+    from services.data_service import DataService
 
 
 router = APIRouter(prefix="/signals", tags=["signals"])

@@ -25,12 +25,25 @@ RUN python -m venv /venv
 ENV PATH="/venv/bin:$PATH"
 
 # Copy and install Python dependencies
+ARG INCLUDE_FKS_DATA=0
 COPY requirements*.txt ./
-RUN pip install --no-cache-dir --upgrade pip wheel \
-    && pip install --no-cache-dir -r requirements.txt
+RUN set -e; \
+        pip install --no-cache-dir --upgrade pip wheel && \
+        pip install --no-cache-dir -r requirements.txt && \
+        if [ "$INCLUDE_FKS_DATA" = "1" ]; then \
+                echo "Including local fks_data package"; \
+                if [ -d ../fks_data ]; then \
+                    pip install --no-cache-dir -e ../fks_data || echo "WARN: failed editable install of ../fks_data"; \
+                else \
+                    echo "WARN: ../fks_data not present in build context"; \
+                fi; \
+        fi
 
 # Copy source code
 COPY src/ ./src/
+
+# Smoke test import to fail fast if dependencies or modules are broken
+RUN python -c "import sys;print('Python',sys.version);import fastapi_main;print('Imported fastapi_main OK')" || (echo 'Smoke test failed' && exit 1)
 
 # Runtime stage
 FROM python:${PYTHON_VERSION}-slim AS final
