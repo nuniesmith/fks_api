@@ -12,7 +12,7 @@ ENV_FILE="$SCRIPT_DIR/.env"
 [ -f "$ENV_FILE" ] && set -a && source "$ENV_FILE" && set +a || log WARN "Local .env not found; continuing with current env"
 
 # Use shared scripts if available
-SHARED_DOCKER_DIR="$SCRIPT_DIR/shared/shared_docker"
+SHARED_DOCKER_DIR="$SCRIPT_DIR/shared/docker"
 if [[ -d "$SHARED_DOCKER_DIR" ]]; then
     log INFO "✅ Shared docker resources found"
     COMPOSE_BASE="$SCRIPT_DIR/docker-compose.yml"
@@ -55,7 +55,7 @@ EOF
 check_submodules(){
     log INFO "🔍 Checking shared resource submodules..."
     
-    if [[ ! -d "$SCRIPT_DIR/shared/shared_docker/.git" || ! -d "$SCRIPT_DIR/shared/shared_scripts/.git" ]]; then
+    if [[ ! -d "$SCRIPT_DIR/shared/docker/.git" || ! -d "$SCRIPT_DIR/shared/scripts/.git" ]]; then
         log WARN "⚠️ Shared submodules not initialized"
         log INFO "Initializing submodules..."
         git submodule update --init --recursive

@@ -231,6 +231,6 @@ docker compose exec worker celery -A app.celery call fks_api.ping
 
 ## 📚 Related Documentation
 
-- [Shared Docker Templates](shared/shared_docker/README.md)
-- [Shared Scripts Documentation](shared/shared_scripts/README.md)
+- [Shared Docker Templates](shared/docker/README.md)
+- [Shared Scripts Documentation](shared/scripts/README.md)
 - [Using Shared Docker Guide](SHARED_DOCKER_GUIDE.md)

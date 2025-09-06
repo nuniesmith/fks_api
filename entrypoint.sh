@@ -10,7 +10,7 @@ log_error() { echo -e "\033[0;31m[ERROR]\033[0m $(date -Iseconds) - $1" >&2; }
 log_info "🚀 Starting FKS API with shared scripts integration"
 
 # Check if shared scripts are available
-SHARED_DOCKER_ENTRYPOINT="/app/shared/shared_scripts/docker/entrypoint-python.sh"
+SHARED_DOCKER_ENTRYPOINT="/app/shared/scripts/docker/entrypoint-python.sh"
 if [[ -f "$SHARED_DOCKER_ENTRYPOINT" ]]; then
     log_info "✅ Using shared Docker entrypoint script"
     exec "$SHARED_DOCKER_ENTRYPOINT" "$@"

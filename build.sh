@@ -6,7 +6,7 @@ set -euo pipefail
 
 SCRIPT_DIR=$(dirname "$0")
 WORKSPACE_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || dirname "$SCRIPT_DIR")
-SHARED_BUILD_SCRIPT="$SCRIPT_DIR/shared/shared_docker/scripts/build-service.sh"
+SHARED_BUILD_SCRIPT="$SCRIPT_DIR/shared/docker/scripts/build-service.sh"
 
 # Check if shared build script exists
 if [[ ! -f "$SHARED_BUILD_SCRIPT" ]]; then
