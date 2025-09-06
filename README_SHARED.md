@@ -14,7 +14,7 @@ Lightweight FastAPI service providing HTTP/WebSocket endpoints for the FKS platf
 ### 1. Initialize Shared Resources
 ```bash
 # Initialize shared templates and scripts
-./setup-shared-resources.sh
+./setup-shared_resources.sh
 
 # Or manually:
 git submodule update --init --recursive
@@ -69,7 +69,7 @@ fks_api/
 ├── build.sh                     # Uses shared build system
 ├── start.sh                     # Enhanced startup with submodule support
 ├── entrypoint.sh                # Delegates to shared entrypoint
-└── setup-shared-resources.sh    # Initialize shared resources
+└── setup-shared_resources.sh    # Initialize shared resources
 ```
 
 ## 🛠️ Development
@@ -148,13 +148,13 @@ This service uses two shared repositories as Git submodules:
 ### Update Shared Resources
 ```bash
 # Update to latest versions
-./setup-shared-resources.sh --update
+./setup-shared_resources.sh --update
 
 # Force reinitialize (if there are issues)
-./setup-shared-resources.sh --force-reinit
+./setup-shared_resources.sh --force-reinit
 
 # Test the setup
-./setup-shared-resources.sh --test
+./setup-shared_resources.sh --test
 ```
 
 ### Troubleshooting Shared Resources
@@ -179,7 +179,7 @@ poetry run pytest -q
 ### Test with Shared Resources
 ```bash
 # Test the shared resource setup
-./setup-shared-resources.sh --test
+./setup-shared_resources.sh --test
 
 # Health check via shared scripts
 curl http://localhost:8000/health
