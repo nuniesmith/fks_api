@@ -2,7 +2,7 @@ def test_config_stubs_or_shared():
     """Service should function whether or not shared packages are installed.
 
     Preference order when USE_SHARED=1:
-    1. fks_shared_python
+    1. shared_python
     2. shared_python (legacy alias)
     3. standalone_shared stubs
     """
@@ -11,7 +11,7 @@ def test_config_stubs_or_shared():
     use_shared = os.getenv("USE_SHARED", "0") == "1"
     if use_shared:
         load_config = None  # type: ignore
-        for mod_name in ("fks_shared_python", "shared_python"):
+        for mod_name in ("shared_python", "shared_python"):
             try:  # pragma: no cover - dynamic import path variance
                 mod = __import__(mod_name, fromlist=["load_config"])  # type: ignore
                 if hasattr(mod, "load_config"):

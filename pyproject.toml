@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 name = "fks_api"
 version = "0.1.0"
 description = "FKS Trading API service (extracted)"
-authors = [ { name = "FKS" } ]
+authors = [ { name = "nuniesmith" } ]
 requires-python = ">=3.11"
 # README is inside service directory, not parent
 readme = "README.md"

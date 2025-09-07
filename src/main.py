@@ -29,7 +29,7 @@ def main():
     # Import the FastAPI app directly; if package import fails, fall back to file path import
     app = None
     try:
-        from services.api.fastapi_main import app as fastapi_app  # type: ignore
+        from Zservices.api.fastapi_main import app as fastapi_app  # type: ignore
         app = fastapi_app
     except Exception as e:
         print(f"[api.main] Package import failed: {e}. Falling back to path import.")

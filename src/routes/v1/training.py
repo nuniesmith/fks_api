@@ -15,8 +15,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from loguru import logger
 from pydantic import BaseModel, Field
 from services.data_service import DataService
-from services.model_service import ModelService
-from services.training_service import TrainingService
+from Zservices.model_service import ModelService
+from Zservices.training_service import TrainingService
 from shared.utilities.common.logging_utils import log_execution
 from training.job_manager import TrainingJobManager
 

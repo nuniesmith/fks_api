@@ -1,7 +1,7 @@
 """Local lightweight stand-ins for the optional shared packages.
 
 Preference order during runtime (import resolution handled in service code):
-1. `fks_shared_python` (new canonical package)
+1. `shared_python` (new canonical package)
 2. `shared_python` (legacy alias – deprecated, to be removed after migration)
 3. These local stubs (minimal surface just for config-like access)
 
