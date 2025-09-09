@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 try:  # local import after future
-    from Zservices.api.services.data_service import DataService  # type: ignore
+    from services.api.services.data_service import DataService  # type: ignore
 except Exception:  # pragma: no cover
     from services.data_service import DataService
 

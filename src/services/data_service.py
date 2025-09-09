@@ -19,7 +19,7 @@ import pandas as pd
 from loguru import logger
 
 # Use data sources from the existing manager module
-from Zservices.data.manager import YFinanceDataSource, GoldAPIDataSource
+from services.data.manager import YFinanceDataSource, GoldAPIDataSource
 # from framework.cache.decorators import method_cached
 # from framework.cache.backends import CacheBackend
 # from framework.cache import create_backend

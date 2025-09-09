@@ -15,7 +15,7 @@ from loguru import logger
 
 from framework.middleware.auth import get_auth_token, authenticate_user
 try:
-    from Zservices.api.services.data_service import DataService  # type: ignore
+    from services.api.services.data_service import DataService  # type: ignore
 except Exception:
     from services.data_service import DataService
 
