@@ -1,16 +1,16 @@
+#### Flat layout pyproject (PEP 621) ####
 [build-system]
-requires = ["poetry-core>=1.9.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "fks_api"
+name = "api-service"
 version = "0.1.0"
-description = "FKS Trading API service (extracted)"
-authors = [ { name = "nuniesmith" } ]
-requires-python = ">=3.11"
-# README is inside service directory, not parent
-readme = "README.md"
+description = "FKS API Service (flat src layout)"
+authors = [{ name = "nuniesmith" }]
 license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.11"
 dependencies = [
   "fastapi",
   "uvicorn[standard]",
@@ -18,54 +18,21 @@ dependencies = [
   "requests",
   "orjson",
   "pydantic>=2",
-  "celery[redis]>=5.3.0",
+  "celery[redis]>=5.3.0"
 ]
 
 [project.optional-dependencies]
 websocket = ["websockets", "python-socketio"]
-# Poetry extras must use normalized names; split bracket extras into separate pinned deps.
 security = ["python-jose", "cryptography", "passlib", "bcrypt", "python-multipart"]
+dev = ["pytest", "pytest-asyncio", "coverage", "mypy", "ruff"]
 
 [project.scripts]
-fks_api = "fastapi_main:app"
-
-[tool.uvicorn]
-factory = true
+api = "main:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 
-[tool.poetry]
-name = "fks_api"
-version = "0.1.0"
-description = "FKS Trading API service (extracted)"
-authors = ["FKS <nunie.smith01@gmail.com>"]
-license = "Proprietary"
-readme = "README.md"
-# Flat layout: modules live directly under src/, so we omit an explicit packages include.
-# When a proper package directory (src/fks_api/) is introduced, add a packages stanza back.
-
-# Explicitly declare the src package layout so Poetry's builder resolves the module.
-packages = [
-  { include = "fks_api", from = "src" }
-]
-
-[tool.poetry.dependencies]
-# Align with container base image (currently Python 3.13) allowing forward minor versions
-python = ">=3.11,<3.14"
-fastapi = "*"
-uvicorn = {extras = ["standard"], version = "*"}
-httpx = "*"
-requests = "*"
-orjson = "*"
-pydantic = ">=2"
-celery = {version = ">=5.3", extras = ["redis"]}
-
-[tool.poetry.extras]
-websocket = ["websockets", "python-socketio"]
-security = ["python-jose", "cryptography", "passlib", "bcrypt", "python-multipart"]
-
-[tool.poetry.scripts]
-fks_api = "fastapi_main:app"
+[tool.uvicorn]
+factory = true
 
 
