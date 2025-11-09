@@ -30,6 +30,7 @@ auth_router = _import_router("auth")
 backtest_router = _import_router("backtest")
 data_router = _import_router("data")
 health_router = _import_router("health")
+ml_router = _import_router("ml")
 sentiment_router = _import_router("sentiment")
 status_router = _import_router("status")
 strategy_router = _import_router("strategy")
@@ -54,6 +55,7 @@ routers_dict: dict[str, Optional[APIRouter]] = {
     "backtest": backtest_router,
     "data": data_router,
     "health": health_router,
+    "ml": ml_router,
     "sentiment": sentiment_router,
     "status": status_router,
     "strategy": strategy_router,
@@ -68,6 +70,7 @@ routers: list[APIRouter] = [
     router
     for router in [
         health_router,
+        ml_router,
         sentiment_router,
         status_router,
         visualization_router,
@@ -119,6 +122,7 @@ __all__ = [
     "backtest_router",
     "data_router",
     "health_router",
+    "ml_router",
     "sentiment_router",
     "status_router",
     "strategy_router",

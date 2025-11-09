@@ -7,6 +7,10 @@ pydantic>=2
 celery[redis]>=5.3.0
 pytz  # Timezone support
 zoneinfo-backport; python_version < "3.9"  # Backport for older Python versions
+mlflow>=3.3.0  # ML model tracking and serving
+numpy>=1.26.0  # Numerical operations for ML
+shap>=0.44.0  # Model explainability
+aif360>=0.5.0  # Bias detection and fairness metrics
 
 # NOTE: Local path dependency to fks_data disabled for container build. The relative path '../fks_data'
 # does not exist inside the Docker build context (only fks_api directory copied). To develop locally with
