@@ -3,10 +3,13 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-# Install build dependencies
+# Install build dependencies needed for shap, aif360, mlflow, numpy
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
+    make \
+    build-essential \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip, setuptools, and wheel (better caching with BuildKit)
